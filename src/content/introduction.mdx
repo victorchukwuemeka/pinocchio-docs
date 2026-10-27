@@ -1,45 +1,41 @@
 ---
 title: Introduction
-description: Give readers a clear path from their first question to a result they can verify.
-mode: home
+description: Pinocchio is a zero-dependency Rust library for writing Solana programs. Learn what it is, who it is for, and when to choose it over Anchor.
 ---
 
-<Hero
-  title="Build documentation around the reader"
-  subtitle="Start with a useful first result, organize what follows, and publish every format from one reviewable source."
-  primaryLabel="Get started"
-  primaryHref="/quickstart"
-  secondaryLabel="Publish your docs"
-  secondaryHref="/guides/create-a-site"
-/>
+## What is Pinocchio?
 
-## Build the reader journey
+Pinocchio is a Rust library for writing Solana programs without external dependencies. It is `no_std` and reads account data in place instead of copying it, so programs stay small and cheap to run in compute units.
 
-Begin with the task that brings most readers to your documentation, then make
-the next useful step obvious.
+You write the entrypoint, the instruction handling, and the account checks yourself. Pinocchio gives you thin building blocks and stays out of your way.
 
-<CardGroup cols="2">
-  <Card title="Write your quickstart" icon="party-horn" href="/quickstart">
-    Turn prerequisites, setup, one realistic task, and verification into a short path.
-  </Card>
-  <Card title="Organize your navigation" icon="grid-round" href="/customization">
-    Group related tasks and references around how people use your product.
-  </Card>
-  <Card title="Document your API" icon="code-simple" href="/api">
-    Replace `openapi.yaml` to publish browsable endpoint docs with a live playground.
-  </Card>
-  <Card title="Learn the Thally workflow" icon="wrench" href="/guides/create-a-site">
-    Create, publish, and update sites from the Cloud dashboard, the CLI, or your AI tools.
-  </Card>
-</CardGroup>
+## Who it is for
 
-## Publish from one source
+- Rust developers who already understand Solana's account model
+- Teams where compute-unit cost or binary size matters
+- Developers who want to see and control exactly what their program does
 
-Thally turns the same reviewed content into HTML, search, agent discovery files,
-Markdown mirrors, and a read-only MCP surface — so people and AI tools read the
-same, current answer. Add only the locales your readers need.
+## Pinocchio or Anchor?
 
-<Note type="info" title="Start with the product, not the template">
-  Replace this page with the questions, terminology, and workflows your readers
-  already use. Keep `docs.json` focused on the path between those tasks.
-</Note>
+The two solve different problems, so the question is which trade-off fits your program.
+
+Choose **Pinocchio** when:
+
+- Compute-unit cost matters, for example for a program that is called very often
+- You want a minimal dependency tree: fewer crates to audit and faster compiles
+- You want explicit control over how accounts are parsed and validated
+
+Choose **Anchor** when:
+
+- You want account validation and instruction routing generated for you
+- You are new to Solana and want guardrails
+- You value its tooling, such as IDL and client generation, over raw efficiency
+
+The trade-off to understand: Pinocchio removes the framework, so the checks Anchor performs for you (owner, signer, writable, account layout) become your job. Skipping one is a classic source of Solana security bugs.
+
+## Start here
+
+1. [Quickstart](/quickstart): build a minimal program and run it in a local test.
+2. [Troubleshoot your first build](/guides/troubleshooting): fix the errors new users actually hit.
+
+These docs were verified with Pinocchio 0.11.2, Agave CLI 4.3.2 (`cargo-build-sbf` 4.4.0), Rust 1.97.1, and Mollusk 0.16.2.

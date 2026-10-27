@@ -1,47 +1,126 @@
 ---
 title: Quickstart
-description: Guide a new reader through one useful workflow and show them how to verify it.
+description: Build a minimal Solana program with Pinocchio and run it in a local test, with no validator or network.
 ---
 
-A strong quickstart produces one meaningful result. Replace the placeholders
-below with the shortest supported path for your product.
+You will build a program that logs a message, then run it locally in a Rust test. The finished project is at [pinocchio-hello](https://github.com/victorchukwuemeka/pinocchio-hello).
 
 ## Before you begin
 
-List only the requirements needed for this workflow:
+- **Rust 1.97.1 or newer.** The test dependencies require it. Run `rustup update stable`.
+- **Agave (Solana CLI) 4.x with `cargo build-sbf`.** Install it with the official installer:
 
-- An account or credential, when required
-- A supported runtime, device, browser, or operating system
-- Permission to create or change the resource used in the example
+```bash
+sh -c "$(curl -sSfL https://release.anza.xyz/stable/install)"
+```
 
-<Steps>
-  <Step title="Install the required tool">
-    Give readers one recommended installation command.
+Put the installer's `bin` directory before `~/.cargo/bin` on your `PATH`, so an older `solana` does not shadow it:
 
-    ```bash
-    npm install your-package
-    ```
-  </Step>
-  <Step title="Add the minimum configuration">
-    Include only the values needed for the first successful run.
+```bash
+export PATH="$HOME/.local/share/solana/install/active_release/bin:$PATH"
+```
 
-    ```bash
-    your-cli init
-    ```
-  </Step>
-  <Step title="Complete the first task">
-    Use a realistic example that produces an observable result.
+Check both tools:
 
-    ```bash
-    your-cli start
-    ```
-  </Step>
-  <Step title="Verify the result">
-    State exactly what the reader should see and how to recover when it does not appear.
-  </Step>
-</Steps>
+```bash
+rustc --version
+cargo build-sbf --version
+```
+
+The first build downloads tooling and can take a while.
+
+## Create the project
+
+```bash
+cargo new --lib pinocchio-hello
+cd pinocchio-hello
+cargo add pinocchio@=0.11.2
+cargo add solana-program-log
+cargo add --dev mollusk-svm solana-sdk
+```
+
+## Configure the library
+
+Make your `Cargo.toml` match this. Use only `cdylib` for a program you deploy.
+
+```toml
+[package]
+name = "pinocchio-hello"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+pinocchio = "=0.11.2"
+solana-program-log = "1.2.0"
+
+[dev-dependencies]
+mollusk-svm = "0.16.2"
+solana-sdk = "5.0.0"
+```
+
+## Write the program and a test
+
+Replace the whole of `src/lib.rs` with this. The program and the test must be in the same file.
+
+```rust
+use pinocchio::{entrypoint, AccountView, Address, ProgramResult};
+use solana_program_log::log;
+
+entrypoint!(process_instruction);
+
+pub fn process_instruction(
+    _program_id: &Address,
+    _accounts: &mut [AccountView],
+    _instruction_data: &[u8],
+) -> ProgramResult {
+    log("Hello from my pinocchio program!");
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use mollusk_svm::{result::Check, Mollusk};
+    use solana_sdk::{instruction::Instruction, pubkey::Pubkey};
+
+    #[test]
+    fn test_hello() {
+        let program_id = Pubkey::new_unique();
+        let mollusk = Mollusk::new(&program_id, "target/deploy/pinocchio_hello");
+        let instruction = Instruction::new_with_bytes(program_id, &[], vec![]);
+        mollusk.process_and_validate_instruction(&instruction, &[], &[Check::success()]);
+    }
+}
+```
+
+## Build
+
+```bash
+cargo build-sbf
+ls -la target/deploy/pinocchio_hello.so
+```
+
+The file should be a couple of kilobytes (ours was 2,632 bytes). If it is only a few hundred bytes, your program code is not in the build.
+
+## Run the test
+
+```bash
+cargo test -- --nocapture
+```
+
+## Verify the result
+
+You should see your log line and a passing test:
+
+```text
+Program log: Hello from my pinocchio program!
+test tests::test_hello ... ok
+```
+
+If the build or test fails, see [Troubleshoot your first build](/guides/troubleshooting).
 
 ## Choose the next task
 
-Link to the guide that naturally follows this result. Avoid ending the reader’s
-journey with a generic list of every feature.
+Continue with [Troubleshoot your first build](/guides/troubleshooting) to learn the errors you are most likely to meet and how to fix them.

@@ -1,0 +1,78 @@
+---
+title: Troubleshoot your first build
+description: Fix the setup, build, and test errors new Pinocchio users commonly hit, each verified on a real machine.
+---
+
+Each entry below was hit while building the [Quickstart](/quickstart) program.
+
+## `no such command: build-sbf`
+
+```text
+error: no such command: `build-sbf`
+```
+
+**Cause.** `cargo build-sbf` ships with the official Agave release. If `which solana` points into `~/.cargo/bin`, your CLI most likely came from a different install method and does not include it.
+
+**Fix.** Install the official release, then make sure its `bin` directory comes first on your `PATH`:
+
+```bash
+sh -c "$(curl -sSfL https://release.anza.xyz/stable/install)"
+export PATH="$HOME/.local/share/solana/install/active_release/bin:$PATH"
+which cargo-build-sbf
+cargo build-sbf --version
+```
+
+## Warning about two crate types
+
+```text
+Package 'pinocchio-hello' has two crate types defined: cdylib and lib.
+This setting precludes link-time optimizations (LTO).
+```
+
+**Cause.** `crate-type = ["cdylib", "lib"]` in `Cargo.toml`.
+
+**Fix.** A program you only deploy needs `cdylib`:
+
+```toml
+[lib]
+crate-type = ["cdylib"]
+```
+
+## `rustc 1.96.0 is not supported`
+
+**Cause.** Adding the Mollusk test dependency pulls in Agave 4.3.2 crates that require rustc 1.97.1. The build tool uses its own toolchain, so `cargo build-sbf` can work while `cargo test` fails.
+
+**Fix.**
+
+```bash
+rustup update stable
+rustc --version
+```
+
+## The build succeeds but the program is empty
+
+```text
+called `Result::unwrap()` on an `Err` value: FailedToParse("invalid file header")
+called `Result::unwrap()` on an `Err` value: EntrypointOutOfBounds
+```
+
+**Cause.** `cargo build-sbf` can succeed on a library with no program in it. Here, `src/lib.rs` contained only the test module, so the build produced an 8-byte `.text` section and no entrypoint.
+
+**Fix.** Check the file and the binary:
+
+```bash
+cat src/lib.rs
+ls -la target/deploy/pinocchio_hello.so
+```
+
+Make sure `src/lib.rs` contains `entrypoint!(process_instruction);` and the function. A working build is a couple of kilobytes. Plain `cargo build-sbf` is enough; the `--arch` flags did not change the outcome.
+
+## The first build looks stuck
+
+On our machine the first `cargo build-sbf` sat for a long time after the crate-type warning and then finished. We did not establish why. If yours looks stuck, check your connection and let it finish. Later builds took seconds.
+
+## Examples from other tutorials do not compile
+
+**Cause.** Pinocchio's API changed between versions, and other examples may target older ones. The Solana Mollusk page also shows an older Mollusk version than the one a fresh project resolves.
+
+**Fix.** Use the versions pinned in the [Quickstart](/quickstart): Pinocchio 0.11.2 uses `AccountView`, `Address`, and `solana_program_log::log`, not `AccountInfo` and `msg!`.
